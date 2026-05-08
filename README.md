@@ -1,51 +1,77 @@
-# CC Logs API
+# CC Logs API — Production Deployment
 
-Enterprise-grade FastAPI application for:
+A high-concurrency logging and management API designed for scalability and speed. Built with **FastAPI**, **Celery**, **Redis**, and **Elasticsearch**.
 
-- Desktop application logging
-- Elasticsearch log storage
-- Client access-key management
-- Version management
-- S3 file distribution
-- JWT authentication
-- Centralized logging system
+## 🚀 Architecture Overview
 
----
+- **FastAPI**: Handles high-speed API requests asynchronously.
+- **Celery + Redis**: Processes log insertions in the background to ensure sub-millisecond response times for client applications.
+- **Elasticsearch**: Dedicated log storage for advanced searching and filtering.
+- **MySQL**: Persistent storage for administrative metadata (clients, apps, status).
+- **Docker**: Containerized environment for consistent deployment across environments.
 
-# Features
+## 🛠 Tech Stack
 
-- FastAPI REST APIs
-- Elasticsearch integration
-- AWS S3 integration
-- MySQL database support
-- Daily rotating logs
-- Client license validation
-- Version update system
-- Secure presigned download URLs
-- Production-ready structure
+- **Framework**: FastAPI (Python 3.12)
+- **Task Queue**: Celery 5.x
+- **Message Broker**: Redis 7 (Alpine)
+- **Database**: MySQL (Host-based)
+- **Search Engine**: Elasticsearch (Host-based)
+- **Deployment**: Docker & Docker Compose
 
----
+## 📦 Getting Started
 
-# Project Structure
+### 1. Prerequisites
+- Docker & Docker Compose installed.
+- MySQL and Elasticsearch running on the host machine.
 
+### 2. Host Configuration (Important)
+Since the app runs in Docker, ensure your host MySQL allows connections from the Docker network:
+```sql
+CREATE USER 'root'@'%' IDENTIFIED BY 'sqladmin';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+```
+
+### 3. Environment Setup
+Create a `.env` file in the root directory (already provided in this repo):
+```env
+DB_HOST=host.docker.internal
+DB_USER=root
+DB_PASS=sqladmin
+DB_NAME=cc_app_db
+ES_API=http://host.docker.internal:9200
+REDIS_URL=redis://redis:6379/0
+```
+
+### 4. Deployment Commands
 ```bash
-cc_logs_api/
-│
-├── main.py
-├── config.py
-├── logger.py
-├── requirements.txt
-├── README.md
-│
-├── services/
-│   └── elastic.py
-│
-├── db/
-│   └── db.py
-│
-├── utils/
-│   └── response.py
-│
-├── logs/
-│
-└── venv/
+# Start all services in the background
+docker compose up --build -d
+
+# Check service status
+docker compose ps
+
+# View real-time logs
+docker compose logs -f api
+```
+
+## 🔌 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | API Health Check |
+| POST | `/v1/logs/insert` | Insert logs (Background Processed) |
+| POST | `/admin/create-client` | Create new client metadata |
+| GET | `/docs` | Interactive Swagger Documentation |
+
+## 📁 Project Structure
+- `/db`: Database connection pooling (aiomysql).
+- `/services`: Core services like Elasticsearch client.
+- `/utils`: Helper functions and response formatters.
+- `main.py`: FastAPI application and routes.
+- `worker.py`: Celery worker definition and background tasks.
+- `config.py`: Environment-aware configuration loader.
+
+---
+**Developed by Antigravity AI**
