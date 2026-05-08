@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+pymysql
+aiomysql
+elasticsearch<8.0.0
+boto3
+python-jose[cryptography]
+python-dotenv
+pydantic
+redis
+celery
+cryptography
+python-multipart
