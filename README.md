@@ -1,113 +1,84 @@
-# CC Logs API — Production Documentation
+# CC Logs API — Production Deployment
 
-A high-performance logging and version management API system.
+A high-concurrency logging and management API designed for scalability and speed. Built with **FastAPI**, **Celery**, **Redis**, and **Elasticsearch**.
 
-## 🚀 Quick Start
+## 🚀 Architecture Overview
 
-```bash
-# 1. Sync code to deployment directory
-cp -r /Czentrix/apps/cc_logs_api/* /root/cc_logs_api/
-
-# 2. Start services
-cd /root/cc_logs_api
-docker compose up --build -d
-```
-
-## 🔌 API Endpoints Reference
-
-### 🛡️ Admin Endpoints
-Management tasks for clients and versions.
-
-#### 1. Create Client
-`POST /admin/create-client`
-```json
-{
-    "client_id": "test_client",
-    "access_key": "secret_key_123",
-    "expiry_date": "2026-12-31 23:59:59",
-    "status": true
-}
-```
-
-#### 2. Rotate Access Key
-`POST /admin/rotate-key`
-```json
-{
-    "client_id": "test_client",
-    "new_key": "new_secret_456"
-}
-```
-
-#### 3. Disable Client
-`POST /admin/disable-client`
-```json
-{
-    "client_id": "test_client"
-}
-```
-
-#### 4. Upload App Version
-`POST /admin/upload-version` (Multipart/Form-Data)
-- `version`: (string) e.g., "1.0.5"
-- `client_id`: (string)
-- `release_notes`: (string)
-- `mandatory`: (boolean)
-- `file`: (binary) The update package.
-
----
-
-### 📝 Logging Endpoints
-High-concurrency log ingestion.
-
-#### 1. Push Log (Background)
-`POST /push-log/`
-Accepts any JSON structure. The log is offloaded to Celery/Redis immediately.
-```json
-{
-    "agentId": "agent_001",
-    "level": "ERROR",
-    "message": "System failure detected"
-}
-```
-
-#### 2. Fetch Logs
-`GET /get-logs/?page=1&size=100`
-Retrieves logs from Elasticsearch.
-
-#### 3. Search Logs
-`GET /search-logs/?agentId=xxx&level=ERROR&start_date=2024-01-01&end_date=2024-01-31`
-Advanced search across Elasticsearch indices.
-
----
-
-### 🔑 Validation & Updates
-Client-side integration points.
-
-#### 1. Validate Key
-`POST /validate-key`
-Validates the access key and returns a secure S3 download URL for the latest version.
-```json
-{
-    "access_key": "secret_key_123"
-}
-```
-
-#### 2. Check Version
-`POST /check-version`
-Checks if an update is available (uses Redis caching for speed).
-```json
-{
-    "client_id": "test_client",
-    "current_version": "1.0.0"
-}
-```
+- **FastAPI**: Handles high-speed API requests asynchronously.
+- **Celery + Redis**: Processes log insertions in the background to ensure sub-millisecond response times for client applications.
+- **Elasticsearch**: Dedicated log storage for advanced searching and filtering.
+- **MySQL**: Persistent storage for administrative metadata (clients, apps, status).
+- **Docker**: Containerized environment for consistent deployment across environments.
 
 ## 🛠 Tech Stack
-- **API**: FastAPI (Python 3.12)
-- **Background Tasks**: Celery & Redis
-- **Storage**: Elasticsearch (Logs) & MySQL (Metadata)
-- **Cloud**: AWS S3 (Version Hosting)
-- **Environment**: Docker Compose
+
+- **Framework**: FastAPI (Python 3.12)
+- **Task Queue**: Celery 5.x
+- **Message Broker**: Redis 7 (Alpine)
+- **Database**: MySQL (Host-based)
+- **Search Engine**: Elasticsearch (Host-based)
+- **Deployment**: Docker & Docker Compose
+
+## 📦 Getting Started
+
+### 1. Prerequisites
+- Docker & Docker Compose installed.
+- MySQL and Elasticsearch running on the host machine.
+
+### 2. Host Configuration (Important)
+Since the app runs in Docker, ensure your host MySQL allows connections from the Docker network:
+```sql
+CREATE USER 'root'@'%' IDENTIFIED BY 'sqladmin';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+```
+
+### 3. Environment Setup
+Create a `.env` file in the root directory (already provided in this repo):
+```env
+DB_HOST=host.docker.internal
+DB_USER=root
+DB_PASS=sqladmin
+DB_NAME=cc_app_db
+ES_API=http://host.docker.internal:9200
+REDIS_URL=redis://redis:6379/0
+```
+
+### 4. Deployment Commands
+```bash
+# Start all services in the background
+docker compose up --build -d
+
+# Check service status
+docker compose ps
+
+# View real-time logs
+docker compose logs -f api
+```
+
+## 🔌 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | API Health Check |
+| GET | `/docs` | Interactive Swagger Documentation |
+| POST | `/push-log/` | Insert logs (Background Processed) |
+| POST | `/admin/create-client` | Create new client metadata |
+| POST | `/admin/rotate-key` | Rotate client access key |
+| POST | `/admin/disable-client` | Suspend client access |
+| POST | `/admin/upload-version` | Upload new app version package |
+| POST | `/check-version` | Check for available updates |
+| POST | `/validate-key` | Validate key and get download URL |
+| GET | `/get-logs/` | Fetch logs from Elasticsearch |
+| GET | `/search-logs/` | Search logs with filters in ES |
+
+## 📁 Project Structure
+- `/db`: Database connection pooling (aiomysql).
+- `/services`: Core services like Elasticsearch client.
+- `/utils`: Helper functions and response formatters.
+- `main.py`: FastAPI application and routes.
+- `worker.py`: Celery worker definition and background tasks.
+- `config.py`: Environment-aware configuration loader.
 
 ---
 **Developed by Antigravity AI**
