@@ -146,8 +146,8 @@ async def generate_s3_url(bucket, key):
 async def es_fetch_logs(page, size):
     return await asyncio.to_thread(es_service.fetch_logs, page, size)
 
-async def es_search_logs(agentId, level, start_date, end_date, page, size):
-    return await asyncio.to_thread(es_service.search_logs, agentId, level, start_date, end_date, page, size)
+async def es_search_logs(agentId, macAddress, level, start_date, end_date, page, size):
+    return await asyncio.to_thread(es_service.search_logs, agentId, macAddress, level, start_date, end_date, page, size)
 
 # =========================================================
 # ROUTES
@@ -320,9 +320,9 @@ async def get_logs(page: int = 1, size: int = 100):
         return error_response(message="Failed to fetch logs", status_code=500, error=e)
 
 @app.get("/search-logs/", tags=["Logs"])
-async def search_logs(agentId: str = None, level: str = None, start_date: str = None, end_date: str = None, page: int = 1, size: int = 100):
+async def search_logs(agentId: str = None, macAddress: str = None, level: str = None, start_date: str = None, end_date: str = None, page: int = 1, size: int = 100):
     try:
-        result = await es_search_logs(agentId, level, start_date, end_date, page, size)
+        result = await es_search_logs(agentId, macAddress, level, start_date, end_date, page, size)
         return success_response(message="Logs fetched", data=result)
     except Exception as e:
         return error_response(message="Search failed", status_code=500, error=e)

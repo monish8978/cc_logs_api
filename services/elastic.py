@@ -119,8 +119,7 @@ class ElasticsearchService:
     def sanitize_log(self, data: dict):
 
         clean_data = {
-            "timestamp": data.get("timestamp")
-            or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "timestamp": str(data.get("timestamp") or datetime.now().strftime("%Y-%m-%dT%H:%M:%S")).replace(" ", "T"),
 
             "agentId": data.get("agentId", ""),
             "macAddress": data.get("macAddress", ""),
@@ -243,6 +242,7 @@ class ElasticsearchService:
     def search_logs(
         self,
         agentId=None,
+        macAddress=None,
         level=None,
         start_date=None,
         end_date=None,
@@ -261,6 +261,14 @@ class ElasticsearchService:
                 must_queries.append({
                     "term": {
                         "agentId": agentId
+                    }
+                })
+
+            if macAddress:
+
+                must_queries.append({
+                    "term": {
+                        "macAddress": macAddress
                     }
                 })
 
